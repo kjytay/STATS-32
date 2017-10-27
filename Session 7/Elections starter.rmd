@@ -1,0 +1,113 @@
+---
+title: "County-level Data for 2016 Presidential Elections"
+author: "Put your name"
+date: "10/24/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE)
+```
+
+## Introduction
+
+This is an analysis of US presidential elections data for 2016 at the county level. Since only a small percentage of votes went to independent candidates, we will only compare Democrat and Republican voteshare.
+
+The data for this analysis is taken from https://github.com/tonmcg/County_Level_Election_Results_12-16.
+
+## Data import and checking
+
+Library imports:
+```{r}
+library(dplyr)
+library(ggplot2)
+library(knitr)
+library(readr)
+```
+
+Read in the data:
+
+```{r}
+df <- read_csv("2016_US_County_Level_Presidential_Results.csv")
+kable(head(df))
+```
+
+There are 3,141 rows in total, matching the number of counties in the US (Source: http://www.snopes.com/trump-won-3084-of-3141-counties-clinton-won-57/ and http://www.wnd.com/2016/12/trumps-landslide-2623-to-489-among-u-s-counties/).
+
+The dataset contains the following columns:
+```{r}
+names(df)
+```
+
+- `per_dem` and `per_gop` refer to the percentage of votes going to Democrats and Republicans respectively.
+- `diff` represents the absolute difference between Republican votes - Democrat votes.
+- `per_point_diff` represents this difference as a percentage of total votes.
+- `combined_fips` is a 5-digit code identifying the county. (From [Wikipedia](https://en.wikipedia.org/wiki/FIPS_county_code): The FIPS county code is a five-digit Federal Information Processing Standards (FIPS) code (FIPS 6-4) which uniquely identifies counties and county equivalents in the United States, certain U.S. possessions, and certain freely associated states.)
+
+`combined_fips` is the column that we are going to use to combine our elections data with our mapping data.  
+
+Since we are interested in whether a given county had more Republican or Democrat votes, we have to recompute the `diff` and `per_point_diff` columns. `diff` and `per_point_diff` will be positive if there are more Republican votes than Democrat votes (and vice versa).
+
+```{r}
+df <- df %>% mutate(diff = votes_gop - votes_dem,
+                    per_point_diff = diff / total_votes * 100)
+```
+
+## Summary statistics
+
+Compute percentage of popular vote won by each party:
+```{r}
+paste0("Republican % of popular vote: ", 
+       round(sum(df$votes_gop) / sum(df$total_votes) * 100, digits = 1),
+       "%")
+paste0("Democrat % of popular vote: ", 
+       round(sum(df$votes_dem) / sum(df$total_votes) * 100, digits = 1),
+       "%")
+```
+
+Although Clinton lost the presidential election, she actually won the popular vote!  
+
+Compute number of counties won by each party:
+```{r}
+df %>% transmute(gop_won = votes_gop > votes_dem) %>%
+    summarize(gop_won = sum(gop_won))
+```
+
+Painting a completely different picture, Trump won 2654 out of 3141 counties (or 84.5% of all counties). Clinton only won 487 counties. This suggests that Clinton won in counties with large populations, or that the margin of victory was slimmer in the counties that Trump won compared with the counties that Clinton won.
+
+## Histograms
+
+We have Clinton winning the popular vote on one hand, but Trump winning many more counties. How can we reconcile these two facts?
+
+One theory is that Clinton won her counties by a huge margin percentage-wise, while Trump won his counties by a slim margin percentage-wise. To test this theory, we could plot a histogram of the `per_point_diff`:
+```{r}
+ggplot() +
+    geom_histogram(data = df, mapping = aes(x = per_point_diff)) + 
+    labs(title = "Histogram of % vote margin", 
+         x = "% Republicans won by", y = "Frequency")
+```
+
+The chart does not support the theory that Trump had narrower margins of victory in the counties that he won: he won a sizeable number of counties with > 50% vote difference.
+
+Let's try plotting a histogram of `diff` to look at absolute differences instead:
+```{r}
+ggplot() +
+    geom_histogram(data = df, mapping = aes(x = diff)) + 
+    labs(title = "Histogram of absolute vote margin", 
+         x = "No. of votes Republicans won by", y = "Frequency")
+```
+
+This chart is very different! In the counties that Clinton won, she won it by extremely large margins in terms of absolute votes. Thus, even though she won very few counties compared to Trump, these large margins meant that she could actually win the popular vote.
+
+The code below shows that the top 45 counties with largest absolute vote difference were all won by Clinton (number 46 was Montgomery, TX, which went to Trump).
+
+```{r}
+df %>% select(State = state_abbr, County = county_name, diff) %>%
+    mutate(abs_diff = abs(diff)) %>%
+    arrange(desc(abs_diff)) %>%
+    select(State, County, `Vote difference` = diff) %>%
+    head(n = 50) %>%
+    kable()
+```
+
+<Session 7 code starts here>
