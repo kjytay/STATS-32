@@ -1,0 +1,33 @@
+---
+title: "Session 7 Practice: Making maps with R"
+author: "Kenneth Tay"
+date: "Oct 23, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+```
+
+**Note: There are often multiple ways to answer each question.**  
+
+1. Load the `ggplot2`, `dplyr` and `maps` packages and save the world map data frame into the variable `map_world`. (Hint: Look at [this PDF](https://cran.r-project.org/web/packages/maps/maps.pdf) for hints on where the world map data frame is saved.)  
+
+2. Plot the world map, ensuring that the aspect ratio of the map is correct and that the countries have white fill and black outline.  
+
+3. Save the coordinates for just the region "China" in the variable `map_china`. Plot with the same settings as above, except that in addition, we don't see the latitude and longitude axes.  
+
+4. Load US state-level data into the variable `map_state`. Plot just the states of California, Oregon and Washington.  
+
+5. Load the `datasets` package. Create a data frame named `division` such that the first column `region` contains `state.name` in lower case, and the second column `division` contains `state.division`.  
+
+6. Join `division` to `map_state` (with `map_state` on the left) on the key `region`.  
+
+7. Plot a map of the US at state-level, with the fill of the states indicating the division it belongs to.  
+
+8. Figure out why there is an NA in the legend in the map resulting from Question 7. Modify the data frame so that the NA is not included.  
+
+9. Augment the map from Question 7 with state abbreviations in the center of the map, using `state.abb` and `state.center` to help you. (Hint: Combine `state.abb` and `state.center` into an auxiliary data frame first.)  
+
+10. You may have noticed that the state abbreviations for Hawaii and Alaska were included, even though they were not drawn. (This of course depends on how you drew the map in Question 9.) Redo the map above, but without plotting the abbreviations for these two states.  

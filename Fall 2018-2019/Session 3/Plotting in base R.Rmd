@@ -1,0 +1,132 @@
+---
+title: "Plotting in base R"
+author: "Kenneth Tay"
+date: "Oct 9, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 5, fig.height = 4)
+```
+
+Even with the introduction of the `ggplot2` package, several R users still rely on base R (i.e. R without any user-installed packages) to create their plots. While the charts produced tend to be less fancy than their `ggplot2` counterparts, the syntax for base R can be very succinct. This is helpful when you are just exploring the data and are not too fussed about presentation.
+
+For this document, we'll use the built-in `mtcars` datset as a running example.
+
+```{r}
+data(mtcars)
+head(mtcars)
+```
+
+## Scatterplot
+
+Let's say we are interested in the relationship between `mpg` and `wt`. We can make a scatterplot using the `plot` command, defining the `x` and `y` arguments of the function. (Recall that data frames are really just lists, so `mtcars$wt` refers to the `wt` element of `mtcars`, i.e. the values in the `wt` column.)
+
+```{r}
+plot(x = mtcars$wt, y = mtcars$mpg)
+```
+
+To have the points be represented by other shapes (instead of white circles), add the `pch` argument to `plot` (full list of shapes [here](http://www.cookbook-r.com/Graphs/Shapes_and_line_types/)):
+```{r}
+plot(x = mtcars$wt, y = mtcars$mpg, pch = 5)
+```
+
+To change the size of the points, add the `cex` option to `plot` (1 is the default value):
+```{r}
+plot(x = mtcars$wt, y = mtcars$mpg, pch = 7, cex = 2)
+```
+
+In some cases (e.g. time series data), we may want lines joining the data points instead of showing just the points themselves. To have lines instead of points, add `type = "l"` to the `plot` command. (Other options for `type` are "o", "p" and "b". Try them!)
+
+```{r}
+plot(x = mtcars$wt, y = mtcars$mpg, type = "l")
+```
+
+(Drawing lines doesn't really make sense in this context, so the above is simply for illustration.) We can have different types of lines by adding an `lty` option to plot (see [here](http://www.cookbook-r.com/Graphs/Shapes_and_line_types/) for more line options):
+```{r}
+plot(x = mtcars$wt, y = mtcars$mpg, type = "l", lty = "dashed")
+```
+
+For different line widths, use `lwd`:
+```{r}
+plot(x = mtcars$wt, y = mtcars$mpg, type = "l", lwd = 2)
+```
+
+
+To change the color of the points, use the `col` option:
+```{r}
+plot(x = mtcars$wt, y = mtcars$mpg, pch = 16, col = "blue")
+```
+
+Like `ggplot2`, we can make the color of the point depend on which category it is in. Let's say we want to color the points depending on the value of `cyl`. We first convert `cyl` to a factor, then modify the value of `col` in the `plot` call:
+```{r}
+mtcars$cyl <- factor(mtcars$cyl)
+plot(x = mtcars$wt, y = mtcars$mpg, pch = 16, col = factor(mtcars$cyl))
+```
+
+To add a legend, follow the `plot` call with a `legend` call. The `x` and `y` options determine the top-left hand corner of the legend box. (Use the console to figure out what `levels(mtcars$cyl)` returns. Notice how you have to specify `col` and `pch` in the `legend` call as well. What happens if you don't include them?)
+
+```{r}
+plot(x = mtcars$wt, y = mtcars$mpg, pch = 16, col = mtcars$cyl)
+legend(x = 5, y = 32, legend = levels(mtcars$cyl), col = c(1:3), pch = 16)
+```
+
+The code below shows how you can add titles and change the axis labels:
+```{r}
+plot(x = mtcars$wt, y = mtcars$mpg,
+     main = "Miles per gallon vs. Weight", xlab = "Weight", ylab = "mpg")
+```
+
+To change the size of the title and the axis labels, use the `cex.main` and `cex.axis` options respectively.
+
+## Histograms
+
+A histogram shows the frequency count of one variable. To plot a histogram, use the `hist` command:
+```{r}
+hist(mtcars$mpg)
+```
+
+The number of bins is determined by an algorithm that R runs. If you want to specify the number of bins, you can use the `breaks` option and give it a number:
+```{r}
+hist(mtcars$mpg, breaks = 10)
+```
+
+Because of R's algorithm for determining the number of bins, sometimes the number of bins you get doesn't correspond exactly to the number you gave to `breaks`. To have exact control over this, instead of giving `breaks` an integer, you could give it a vector of "breakpoints" instead. For example, the code below bins the values into (10, 12], (12, 14], ..., (32, 34]. (Type `?seq` to read the documentation for the `seq` function and figure out what it returns.)
+```{r}
+hist(mtcars$mpg, breaks = seq(10, 34, by = 2))
+```
+
+## Boxplots
+
+To make a boxplot, use `boxplot`:
+```{r}
+boxplot(mtcars$mpg)
+```
+
+To make a boxplot for each category of `cyl` (the syntax is a little bit like that for `facet_wrap` and `facet_grid` in `ggplot2`):
+```{r}
+boxplot(mtcars$mpg ~ mtcars$cyl)
+```
+
+Notice how the numbers on the y-axis are rotated. To make them as the numbers on the x-axis, use the `las` option:
+```{r}
+boxplot(mtcars$mpg ~ mtcars$cyl, las = 1)
+```
+
+## Bar plots
+
+If I want a bar plot showing how many rows there are for each value of `cyl`, I have to use the `table` function in conjunction with the `barplot` function. (What do you get if you use `plot` instead of `barplot`?)
+```{r}
+table(mtcars$cyl)
+barplot(table(mtcars$cyl))
+```
+
+## Conclusion
+
+Plotting in base R can be very quick, even though the syntax may be harder to interpret and the outputs may look less professional.
+
+Some other resources if you are interested in learning more about plotting in base R:
+
+- [Base R cheatsheet](http://publish.illinois.edu/johnrgallagher/files/2015/10/BaseGraphicsCheatsheet.pdf)
+- [A longer tutorial](https://www.harding.edu/fmccown/r/)
+- A lot of googling around when you have a chart in mind but don't know how to plot it

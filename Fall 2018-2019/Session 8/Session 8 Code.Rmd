@@ -1,0 +1,108 @@
+---
+title: "08-A crash course in statistics and modeling"
+author: "Kenneth Tay"
+date: "Oct 25, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+```
+
+## Getting started
+
+Create a new project named "Session 8". (For instructions on how to create a new project, see Session 5's code file.) Move these files into the newly created "Session 8" folder (they can be downloaded from the course website):
+
+- `Spotify starter.Rmd`
+- `spotify-2017.csv`
+
+Open `Spotify starter.Rmd` by clicking on it in the Files pane. This R markdown file contains some information on the dataset, as well as some pre-processing that I've done. Put your name as author in the YAML header and knit the document. (If the knitting doesn't work, look at the R Markdown console to see what caused the error. It is probably due to files not being in the right place.)
+
+Recall that when we knit a document, R essentially starts a new session/environment and runs all the code there. To replicate the code in our console, click on Run, then Run All.
+
+(Remember that you can't just copy all of the .Rmd file and paste it in the console, since the R console will only understand the parts in the code chunks, not the stuff outside.)
+
+## Testing the difference in tempo between songs of different mode
+
+Each song comes in a particular key, and keys are grouped into "Major" keys and "Minor" keys. Major keys are generally happy-sounding, while minor keys sound more melancholic. Let's say we want to test if the difference in tempo (speed of the song) between songs in major and minor keys. One way to do this is to test if the mean tempo of songs in major keys is different from that for songs in minor keys. Let's create a new chunk to compute these means:
+```{r}
+df %>% group_by(mode) %>%
+    summarize(mean_tempo = mean(tempo))
+```
+
+We see that songs in minor key have mean tempo of ~116 bpm, while songs in major key have a slightly faster mean tempo of ~122 bpm. Is this difference significant? To test for significance, one option we have is to use the two-sided $t$-test. (Whether the $t$-test is appropriate is a question left for a statistical methods class.)
+
+The code for performing a two-sided $t$-test is below:
+```{r}
+major_data <- (df %>% filter(mode == "Major"))$tempo
+minor_data <- (df %>% filter(mode == "Minor"))$tempo
+t.test(major_data, minor_data, alternative = "two.sided")
+```
+
+From the readout, the $p$-value for this test is around 0.30, which is fairly large. We wouldn't reject the null hypothesis in favor of the alternative hypothesis.
+
+The readout also gives us a confidence interval: this is an interval which will capture the true value of the difference 95% of the time (if we were to repeat this procedure over and over again).
+
+The $t$-test makes some strong assumptions on how the data was generated. (We call it a **parametric test**). If we don't want to make assumptions on how the data was generated, we can use a **non-parametric test**, such as the Kolmogorov-Smirnov test, which tests whether the distribution of 2 variables is the same or not:
+```{r}
+ks.test(major_data, minor_data, alternative = "two.sided")
+```
+
+## Relationship between valence and loudness
+
+Next, let's perform linear regression on `valence` vs. `loudness`. We expect increasing loudness to result in increasing valence. Linear regression is easily done in R with the `lm` function:
+```{r}
+lm(valence ~ loudness, data = df)
+```
+
+The line above finds the coefficients $a_1$ and $a_2$ such that the line $valence = a_1 + a_2 \cdot loudness$ fits the data best. From the output, we can see that the line of best fit is $score = 0.79386 + 0.04897 \cdot alc$. The coefficients mean that for every unit increase in the `loudness` scale, `valence` increases correspondingly by 0.04897. This matches our expectations.
+
+The output of the `lm` function doesn't give us any information other than the coefficients. We can use the summary function to get more information:
+```{r}
+fit <- lm(valence ~ loudness, data = df)
+summary(fit)
+```
+
+Residuals refer to the differences between the actual score, and the score predicted by the linear regression. This is something that we look at to check if the linear regression model makes sense.
+
+Instead of just the value of the coefficients, we have more information in a table. Look at the p-values in the last column. The p-value for `loudness` is the result of testing the null hypothesis coefficient for `loudness` $= 0$ (i.e. `loudness` is uncorrelated with `valence`) vs. the alternative hypothesis coefficient for `loudness` $\neq 0$ (i.e. `loudness` is correlated with `valence`). The p-value is very small, and so the data is not consistent with the null hypothesis (i.e. no relationship). We would conclude that there is a statistically signifcant relationship between loudness and valence.  
+
+We can plot the linear fit on a scatterplot using `geom_smooth` and specify the method as "lm":
+```{r}
+ggplot(data = df, mapping = aes(x = loudness, y = valence)) +
+    geom_point() +
+    geom_smooth(method = "lm")
+```
+
+## Modeling valence as a function of loudness and mode
+
+It is likely that `valence` is influenced by more than 1 variable. We can fit more complex linear models with the `lm` function as well. The code below fits the additive model $valence = a_1 + a_2 \cdot loudness + a_3 \cdot modeMajor$:
+```{r}
+fit <- lm(valence ~ loudness + mode, data = df)
+summary(fit)
+```
+
+When faced with a categorical variable, R chooses a baseline category (in this case, "Minor"). It then creates a series of other "dummy" variables for all the other categories. For a particular row, the value of the dummy variable is 1 if the row belongs to that category, 0 otherwise. In this example, the only other category for `mode` is "Major", so R creates a dummy variable `modeMajor` which has value 1 if the row belongs to a song in the major key, 0 otherwise.  
+
+The issue with the additive model is that it constrains the gradient of the fit to be the same for both males and females (see slides). To fix that, we can fit a model with interactions effects instead:
+```{r}
+fit <- lm(valence ~ loudness * mode, data = df)
+summary(fit)
+```
+
+With this code, R fits the model $valence = a_1 + a_2 \cdot loudness + a_3 \cdot modeMajor + \color{blue}{a_4 \cdot loudness \cdot modeMajor}$, where $modeMajor = 1$ if the row has `mode` "Major", and $modeMajor = 0$ otherwise.
+
+We can plot the linear fit on scatterplot:
+```{r}
+ggplot(data = df, mapping = aes(x = loudness, y = valence, col = mode)) + 
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE) +
+    facet_wrap(~ mode)
+```
+
+The `Spotify final.Rmd` file has a fair amount of optional material that goes deeper in some other aspects of modeling you could do in R.
+
+## Session info
+```{r eval=TRUE}
+sessionInfo()
+```

@@ -1,0 +1,40 @@
+---
+title: "Session 1 Practice: Basic R objects"
+author: "Kenneth Tay"
+date: "Oct 2, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+```
+
+**Note: There are often multiple ways to answer each question.**  
+
+1. Create a vector of integers from -5 to 10 (inclusive) and assign it to the variable `x`.  
+
+2. What is the sum of the elements of `x`? (This involves a function that we did not discuss in class. Google is your friend!)  
+
+3. Create a vector which consists of the first 10 multiples of 3 (i.e. 3, 6, ..., 30) and assign it to the variable `y`.  
+
+4. What is the result of `x + y`? Why does R return this result?  
+
+5. What is the result of `"1" + "2"`? Why does R return this result?  
+
+6. What is the result of `z <- c(1, 2, "3")`? Why does R return this result?  
+
+7. Create a matrix using `M <- matrix(1, 4, 5)`. What is the result, and why does R return this result?  
+
+8. Find the sum of the 3rd row of `M`.  
+
+9. Create the following list:
+```{r}
+person <- list(name = "John Doe",
+               age = 26,
+               classes = c("ENG", "MAT", "SCI", "SPA", "MUS"))
+```
+
+What is the result of `person$classes[2]`? Why does R return this result?  
+
+10. What code can I use to find out how many classes John Doe took?  

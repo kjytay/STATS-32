@@ -1,0 +1,42 @@
+---
+title: "Session 6 Practice: Importing, transforming and plotting data"
+author: "Kenneth Tay"
+date: "Oct 18, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+```
+
+**Note: There are often multiple ways to answer each question.**  
+
+1. Download `nba_free_throws.csv` from https://github.com/kjytay/misc/tree/master/data. (Right click on `nba_free_throws.csv` and select "Save Link As..."). Import this dataset into R as the variable `df`. Are there columns which need their format changed?  
+
+2. Select just the rows from the 2015-2016 regular season, remove the column `play` and save the result in `df2`.  
+
+All questions from here are about `df2`.  
+
+3. Display the top 10 players who took the most free throws.   
+
+4. Free throw percentage is defined as the percentage of shots taken which were made. Display the top 10 players with the highest free throw percentages. (Hint: modify Qn 3 code to take two summaries.)
+
+5. The highest free throw percentages are so high because these players didn't take many shots. Display the top 10 players with the highest free throw percentages **among only the players who took at least 100 free throws**. (Hint: Filter Qn 4 code at an appropriate step.)  
+
+6. Save the summary table of shots taken, shots made and free throw percentage by player in `summary_df` (only players who took at least 100 free throws). Using `summary_df`, make a scatterplot of free throw percentage vs. free throws taken. Set the `alpha` value of the points to `0.5`, and draw a blue dashed horizontal line to show the mean free throw percentage across these players. (Hint: For the horizontal line, use `geom_abline`.)  
+
+7. Which game (in `df2`) had the most number of free throws? Save the rows in `df2` from that game in `df3`.
+
+8. Make a bar plot showing the number of free throws each player took in this game. Add `coord_flip()` as a layer to the plot so that the bars are horizontal. (Bonus: Can you sort the bars such that the longest ones go on top? The `forcats` package will be helpful, as will the last example of Section 15.4 of R4DS.)
+
+The following code joins data from `summary_df` to `df3` and saves it as df4:
+```{r eval=FALSE}
+df4 <- df3 %>% left_join(summary_df, by = "player")
+```
+
+9. Modify your bar plot in Qn 8 so that the fill of the bars is equal to the player's free throw percentage. Add the layer `scale_fill_distiller(palette = "RdYlGn", direction = 1)` to give your bars some appropriate colors. Why are some bars grey?  
+
+
+10. Using `tidyr`'s `separate` function, separate the `game` column in `df2` to a `home` column which has the name of the home team, and an `away` column which has the name of the away team. (See Section 12.4 of R4DS for details on the `separate` function.)  
+

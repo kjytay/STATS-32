@@ -1,0 +1,106 @@
+---
+title: "Session 5 Practice: Errors/error messages"
+author: "Kenneth Tay"
+date: "Oct 16, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+```
+
+**Note: There are often multiple ways to answer each question.**  
+
+For the following questions, explain what went wrong and how the program can be fixed.
+
+Load these packages before starting the problems:
+```{r warning=FALSE, message=FALSE}
+library(ggplot2)
+library(dplyr)
+```
+
+1. We want to add `x` and `y` together to get the value of 24:
+```{r error=TRUE}
+x <- 14
+y <- "10"
+x + y
+```
+
+
+2. We want to add `1+2` and divide it by `3+4`:
+```{r error=TRUE}
+((1+2)/(3+4)))
+```
+
+
+For the rest of the questions, we will use the `mtcars` dataset:
+```{r}
+data(mtcars)
+```
+
+3. We want to save the vector of numbers 1, 2, ..., L-1 into the variable `x`, where L is the number of columns in `mtcars`.
+```{r}
+x <- 1:ncol(mtcars)-1
+x
+```
+
+
+4. We want to make a scatterplot of `mpg` vs. `wt`:
+```{r error=TRUE}
+ggplot(data = mtcars) +
+    geom_point(y = mpg, x = wt)
+```
+
+
+5. We want to make a histogram of `mpg`:
+```{r eval=FALSE}
+ggplot(data = mtcars)
+    + geom_histogram(aes(x = mpg))
+```
+
+```{r echo=FALSE, error=TRUE}
+ggplot(data = mtcars)
+    + geom_histogram(aes(x = mpg))
+```
+
+
+6. We want to make a boxplot of `mpg` for each value of `cyl`, overlay it with points, and add a title to the plot:
+```{r eval=FALSE}
+ggplot(data = mtcars, aes(x = cyl, y = mpg)) +
+    geom_boxplot() +
+    geom_point()
+    labs(title = "Plot of mpg vs. cyl")
+```
+
+```{r echo=FALSE, error=TRUE}
+ggplot(data = mtcars, aes(x = cyl, y = mpg)) +
+    geom_boxplot() +
+    geom_point()
+    labs(title = "Plot of mpg vs. cyl")
+```
+
+
+7. We want a scatterplot of `qsec` vs. `wt`, but we want all the points to be colored blue:
+```{r}
+ggplot(data = mtcars, aes(y = qsec, x = wt)) +
+    geom_point(aes(col = "blue"))
+```
+
+
+8. We want to create a new column which is `miles per quart` and display the first 3 rows:
+```{r error=TRUE}
+mtcars %>% mutate(miles per quart = mpg / 4) %>% head(n = 3)
+```
+
+
+9. We want to compute the mean `mpg` for each value of `gear`:
+```{r error=TRUE}
+mtcars %>% group_by(gear) %>% summarize(mean = mean)
+```
+
+
+10. We want to compute the maximum `hp` and `disp` in the dataset:
+```{r}
+mtcars %>% summarize(max = max(hp, disp))
+```

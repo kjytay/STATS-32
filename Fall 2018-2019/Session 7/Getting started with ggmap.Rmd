@@ -1,0 +1,85 @@
+---
+title: "Getting started with `ggmap`"
+author: "Kenneth Tay"
+date: "10/23/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The `maps` package produces pretty rudimentary maps which you can use for your visualizations. `ggmap` is the package that you'll want to use if you want a more detailed map as background to your visualizations. In what follows, we'll demonstrate how to use `ggmap` with the `Sacramento` dataset in the `caret` package:
+
+```{r message=FALSE, warning=FALSE}
+library(caret)
+library(dplyr)
+library(ggmap)
+
+data(Sacramento)
+df <- Sacramento %>% group_by(city) %>%
+    summarize(median_price = median(price), transactions = n(),
+              latitude = mean(latitude), longitude = mean(longitude))
+```
+
+## Google maps  
+
+It turns out that using Google maps as a background is quite a challenge now. To do so, you need to provide an API key and enable billing. See https://github.com/dkahle/ggmap for more details on how to work with these new restrictions.
+
+## Stamen maps
+
+Fortunately there is an easier way to get maps which are more sophisticated than those provided by the `maps` package: Stamen maps. The code below is an example of how to get a map from Stamen maps (the `get_stamenmap` function belongs to the `ggmap` package.)
+
+```{r}
+height <- max(Sacramento$latitude) - min(Sacramento$latitude)
+width <- max(Sacramento$longitude) - min(Sacramento$longitude)
+sac_borders <- c(bottom  = min(Sacramento$latitude)  - 0.1 * height, 
+                 top     = max(Sacramento$latitude)  + 0.1 * height,
+                 left    = min(Sacramento$longitude) - 0.1 * width,
+                 right   = max(Sacramento$longitude) + 0.1 * width)
+
+map <- get_stamenmap(sac_borders, zoom = 10, maptype = "toner-lite")
+ggmap(map)
+```
+
+Notice that a bunch of messages are printed showing what files are being loaded. To remove these messages from your report, include the option "message=FALSE" at the top of your R chunk.  
+
+By default, the zoom parameter is set to 10. Making it bigger gives a more detailed map, but takes longer to load.
+
+Just like in `ggplot2` graphics, we can add layers to the map drawn by `ggmap(map)` with the `+` syntax. For example, if we wanted to overlay the map with the data from our `Sacramento` dataset, we could do the following:
+```{r}
+ggmap(map) +
+    geom_point(data = df, mapping = aes(x = longitude, y = latitude, 
+                                        col = median_price, size = transactions)) +
+    scale_color_distiller(palette = "YlOrRd", direction = 1)
+```
+
+Another way to get Stamen maps as a background is to use the `qmplot` function. Notice though that
+the syntax is pretty different from what we had with `ggplot`. Here is a map plotting the same points
+as above but with a different color scale:
+```{r message=FALSE}
+qmplot(x = longitude, y = latitude, data = df, maptype = "watercolor", 
+       geom = "point", color = median_price, size = transactions) +
+    scale_color_gradient(low = "blue", high = "red")
+```
+
+The full list of map types is "terrain", "terrain-background", "terrain-labels", "terrain-lines", "toner", "toner-2010", "toner-2011", "toner-background", "toner-hybrid", "toner-labels", "toner-lines", "toner-lite", "watercolor". Note that some of them don't work with the CRAN version of `ggmap` (e.g. "terrain"); instead, you will have to download the github version of the package (see https://github.com/dkahle/ggmap/issues/188).
+
+Below are examples of what "terrain" and "toner" look like:
+```{r message=FALSE}
+qmplot(x = longitude, y = latitude, data = df, maptype = "terrain", 
+       geom = "point", color = median_price, size = transactions) +
+    scale_color_gradient(low = "blue", high = "red")
+```
+
+```{r message=FALSE}
+qmplot(x = longitude, y = latitude, data = df, maptype = "toner", 
+       geom = "point", color = median_price, size = transactions) +
+    scale_color_gradient(low = "blue", high = "red")
+```
+
+## Session info
+```{r}
+sessionInfo()
+```
+

@@ -1,0 +1,253 @@
+---
+title: "Analysis of Top Tracks in Spotify"
+author: "put your name"
+date: "10/25/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Introduction
+
+This is a basic analysis of the top 100 songs on Spotify for the year 2017. The audio features for each song were extracted using the Spotify Web API and the spotipy Python library. Credit goes to Spotify for calculating the audio feature values. This dataset is publicly available on [Kaggle](https://www.kaggle.com/nadintamer/top-tracks-of-2017/home).
+
+We will only look at a few columns that are of interest to us.
+
+## Data import and processing
+
+Library imports:
+```{r}
+library(dplyr)
+library(forcats)
+library(ggplot2)
+library(knitr)
+library(readr)
+```
+
+Data import:
+```{r}
+df <- read_csv("spotify-2017.csv", 
+    col_types = cols(mode = col_character()))
+df <- df %>% mutate(mode = fct_recode(mode, 
+                                      "Major" = "1.0",
+                                      "Minor" = "0.0"))
+kable(head(df))
+```
+
+For this analysis, we will focus on mode, tempo, valence and loudness. Below are the details for these columns. For details on the remainder of the columns, see [here](https://www.kaggle.com/nadintamer/top-tracks-of-2017).
+
+- `name`: Name of the song  
+- `artists`:  Artist(s) of the song
+- `loudness`: The overall loudness of a track in decibels (dB). Loudness values are averaged across the entire track and are useful for comparing relative loudness of tracks. Loudness is the quality of a sound that is the primary psychological correlate of physical strength (amplitude). Values typical range between -60 and 0 db. 
+- `mode`: Mode indicates the modality (major or minor) of a track, the type of scale from which its melodic content is derived.
+- `valence`: A measure from 0.0 to 1.0 describing the musical positiveness conveyed by a track. Tracks with high valence sound more positive (e.g. happy, cheerful, euphoric), while tracks with low valence sound more negative (e.g. sad, depressed, angry).  
+- `tempo`: The overall estimated tempo of a track in beats per minute (BPM). In musical terminology, tempo is the speed or pace of a given piece and derives directly from the average beat duration.
+
+## Differences in tempo between songs in major and minor keys
+
+First, we want to test if there is a difference in the distribution of tempo between songs in a major key and songs in a minor key. Let's look at this in a histogram:
+```{r}
+ggplot(data = df, mapping = aes(x = tempo)) +
+    geom_histogram(aes(fill = mode)) +
+    facet_wrap(~ mode)
+```
+
+The distribution in both plots look quite similar, with a large peak around 100 and maybe a smaller peak around 130-150.
+
+We can plot both these distributions as a density plot:
+```{r}
+ggplot(data = df, mapping = aes(x = tempo)) +
+    geom_density(aes(col = mode))
+```
+
+The two distributions look very similar.
+
+Let’s compute the mean tempo for each of the modes:
+```{r}
+df %>% group_by(mode) %>%
+    summarize(mean_tempo = mean(tempo))
+```
+
+Test if the difference in mean scores for the sexes is significant or not with the $t$-test:
+```{r}
+major_data <- (df %>% filter(mode == "Major"))$tempo
+minor_data <- (df %>% filter(mode == "Minor"))$tempo
+t.test(major_data, minor_data, alternative = "two.sided")
+```
+
+The $p$-value for this test is around 0.30, so we wouldn't reject the null hypothesis in favor of the alternative hypothesis.  
+
+Test if the distribution of tempo for songs in major key is significantly different from the distribution of tempo for songs in minor key with the Kolmogorov-Smirnov test:
+```{r}
+ks.test(major_data, minor_data, alternative = "two.sided")
+```
+
+The p-value for this test is around 0.80, so we don’t have enough evidence to reject the null hypothesis (i.e. the data we have could have reasonably come from the distribution under the null hypothesis).
+
+## Relationship between loudness and valence
+
+Scatterplot of `valence` vs. `loudness`:
+```{r}
+ggplot(data = df, mapping = aes(x = loudness, y = valence)) +
+    geom_point()
+```
+
+Let's fit a linear model of `valence` vs. `loudness`. Expectation: The louder the song, the happier it is. Hence, we expect a positive relationship.
+
+```{r}
+lm(valence ~ loudness, data = df)
+```
+
+Get more information on the linear fit with `summary`:
+```{r}
+fit <- lm(valence ~ loudness, data = df)
+summary(fit)
+```
+
+From the summary, the correlation between valence and loudness is statistically significant.
+
+Plot the linear fit along with the scatterplot:
+```{r}
+ggplot(data = df, mapping = aes(x = loudness, y = valence)) +
+    geom_point() +
+    geom_smooth(method = "lm")
+```
+
+
+## Modeling valence as a function of loudness and mode
+
+Whether a song is in a major key or a minor key could affect the relationship between valence and loudness. Expectation: ???
+
+```{r}
+ggplot(data = df, mapping = aes(x = loudness, y = valence, col = mode)) +
+    geom_point() +
+    facet_grid(. ~ mode)
+```
+
+First, let's fit the additive model:
+```{r}
+fit <- lm(valence ~ loudness + mode, data = df)
+summary(fit)
+```
+
+In this model, it seems like whether a song is in a major or minor key doesn't make a big difference.  
+
+Next, let’s fit the model with interactions:
+```{r}
+fit <- lm(valence ~ loudness * mode, data = df)
+summary(fit)
+```
+
+We can also draw the linear regression fits with the scatterplot:
+```{r}
+ggplot(data = df, mapping = aes(x = loudness, y = valence, col = mode)) + 
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE) +
+    facet_wrap(~ mode)
+```
+
+We can see a slight change in slope, but they look basically the same. This is more obvious when both are plotted on the same plot:
+```{r}
+ggplot(data = df, mapping = aes(x = loudness, y = valence, col = mode)) + 
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE)
+```
+
+## Optional material
+
+### Getting predictions from the model  
+
+How can we get predictions from the model? We can use the `predict` function, with the first argument being the model (i.e. output of `lm`), and the second argument being the data on which to predict. (The data must be in the exact same form as the data the model was trained on, columns and all.)
+
+This code gives the predictions on the training dataset:
+```{r}
+fit <- lm(valence ~ loudness, data = df)
+predict(fit, df)
+```
+
+Let's plot these predictions on the scatterplot to make sure we got it right:
+```{r}
+df$predictions <- predict(fit, df)
+ggplot(data = df) +
+    geom_point(aes(x = loudness, y = valence)) +
+    geom_smooth(aes(x = loudness, y = valence), method = "lm", se = FALSE) +
+    geom_point(aes(x = loudness, y = predictions), col = "red")
+```
+
+Here are the predictionrs on a randomly generated set of data:
+```{r}
+new_df <- data.frame(loudness = c(-10, -3.6, -3.74, -8, -5.22))
+predict(fit, new_df)
+```
+
+### More information from the model
+
+If you plot the output of the `lm` call, you will get a series of plots which give you more information on the fit:
+```{r}
+fit <- lm(valence ~ loudness, data = df)
+plot(fit)
+```
+
+### Confidence intervals
+
+The following code gives the mean tempo for all the songs:
+```{r}
+mean(df$tempo)
+```
+
+We can use the following code to get an $x$% confidence interval for the mean tempo:
+```{r}
+x <- 0.9
+t.test(df$tempo, conf.level = x)
+```
+
+To get confidence intervals for parameters in a linear model, we can use the `confint` function (if `level = x` in the `confint` call, it will give the endpoints of the `x`% confidence interval):
+```{r}
+x <- 0.95
+fit <- lm(valence ~ loudness, data = df)
+confint(fit, level = x)
+```
+
+### Plotting song labels
+
+It might be informative to have the song names in the scatterplot, especially when we want to identify outliers. The following plot is pretty crowded, so putting all the song names might not be a good idea. In any case, here is how you can do it (play around with the different options in `geom_text` to see what they do):
+```{r fig.width=10, fig.height=6}
+ggplot(data = df, mapping = aes(x = loudness, y = valence)) +
+    geom_point() + 
+    geom_text(aes(label = name, col = mode),
+              hjust = 0, nudge_x = 0.1, angle = 45, size = 3) +
+    facet_grid(. ~ mode)
+```
+
+It's a little bit of a mess. We can do slightly better by loading the `ggrepel` package, and replacing `geom_text` with `geom_text_repel` (and some change of options):
+```{r fig.width=10, fig.height=6}
+library(ggrepel)
+ggplot(data = df, mapping = aes(x = loudness, y = valence)) +
+    geom_point() + 
+    geom_text_repel(aes(label = name, col = mode), size = 3) +
+    facet_grid(. ~ mode)
+```
+
+
+## Drawing the linear fit for an additive model  
+
+I couldn’t find an easy way to draw the linear fits for an additive model in the facetted scatterplot. (If you find a way, let me know!)
+
+This is a workaround:
+```{r}
+# get fit coefficients
+fit <- lm(valence ~ loudness + mode, data = df)
+coefs <- fit$coefficients
+
+# add coefficients to dataset
+df$slope <- coefs[2]
+df$intercept <- ifelse(df$mode == "Minor", coefs[1], coefs[1] + coefs[3])
+
+# plot
+ggplot(data = df, mapping = aes(x = loudness, y = valence, col = mode)) + 
+    geom_point() +
+    geom_abline(aes(slope = slope, intercept = intercept, col = mode)) +
+    facet_wrap(~ mode)
+```

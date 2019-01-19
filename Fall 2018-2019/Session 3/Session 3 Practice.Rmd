@@ -1,0 +1,35 @@
+---
+title: "Session 3 Practice: Data visualization with `ggplot2`"
+author: "Kenneth Tay"
+date: "Oct 9, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+```
+
+**Note: There are often multiple ways to answer each question.**  
+
+Load the `ggplot2` and `fueleconomy` packages, as well as the `vehicles` dataset.
+
+1. Make a scatterplot of `hwy` vs. `cty`.  
+
+2. Rename the axis titles to "Highway mpg" and "City mpg", and add the chart title "Scatterplot of hwy vs. cty".  
+
+3. Modify the plot above such that the color of the dot represents `cyl` value.  
+
+4. Modify the plot above so that each value of `cyl` is in its own plot.  
+
+5. Make a histogram of `year`.  
+
+6. Convert the `cyl` column to an ordered factor variable, and remove all rows which have `NA` in the `cyl` column from the dataset.  
+
+7. For each value of `cyl`, make a violin plot of `hwy` values.  
+
+8. Make a barplot to show how many cars of each type of `fuel` there are in the dataset. (Use the `geom_bar` geom.)  
+
+9. Reduce the dataset to just rows with `cyl` equal to 4. Make a (jittered) scatterplot of `hwy` against `year` with alpha value 0.1. Add a `geom_smooth` layer without the SE bands.  
+
+10. For the previous figure, change the shape of the points to crosses and change the theme to `theme_minimal`.

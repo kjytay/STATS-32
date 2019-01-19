@@ -1,0 +1,35 @@
+---
+title: "Session 8 Solutions: Statistics and modeling"
+author: "Kenneth Tay"
+date: "Oct 25, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+```
+
+**Note: There are often multiple ways to answer each question.**  
+
+1. Install and load the `caret` package. Also load the `ggplot2` and `dplyr` packages. Load the `Sacramento` dataset with `data(Sacramento)`. Plot a histogram of the house prices with 50 bins.
+
+2. Make a violin plot of `price` for each level of `type`. Overlay this with a scatterplot with the same `x` and `y` aesthetics, but define the `col` by `factor(beds)` and introduce jitter and alpha for the points.  Make some observations.  
+
+3. Do a $t$-test at the 95% level to see if the mean price for multi-family homes is statistically different from that for residential homes. (The test should be two-sided.)
+
+4. Instead of doing a $t$-test, do a Kolmogorov-Smirnov test at the 95% level to see if the distribution of multi-family homes is statistically different from that for residential homes. (Again, the test should be two-sided.)
+
+5. Make a boxplot of `price` for each level of `beds`. Make another boxplot of `price` for each level of `baths`. Do you see a trend? (Note: You will want to plot `factor(beds)` and `factor(baths)`, as plotting separate boxplots for different values of a numeric variable doesn't work.)
+
+6. Fit an additive linear model of price against beds and baths with no interaction term. Interpret the coefficients of the model.
+
+7. Instead of fitting an additive linear model of price against beds and baths with no interaction term (as in Question 6), fit a linear model as above but with an interaction term.
+
+8. Drop the columns `zip`, `latitude` and `longitude` from the dataset and save the result to `df`.
+
+9. We have many more columns of information in our dataset `df` that could help to predict price. Fit an additive linear model (with no interaction terms) of price against all other columns in `df`. (You will have to google around to find out how to do this!)
+
+10. Make a scatterplot of `price` against `sqft` and include the linear model fit on the plot (without standard error intervals). Make the title and axis labels informative. Fit the model as well and look at the R-squared value (how well `sqft` predicts `price`).
+
+11. Get the median house price for each city. Plot it on a map, with each city depicted by a point whose size is determined by the number of houses, and color determined by the median price.

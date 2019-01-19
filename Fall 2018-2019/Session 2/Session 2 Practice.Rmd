@@ -1,0 +1,33 @@
+---
+title: "Session 2 Practice: Functions & data frames"
+author: "Kenneth Tay"
+date: "Oct 4, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+```
+
+**Note: There are often multiple ways to answer each question.**  
+
+1. Use the `seq()` function to create a vector that starts with 1, ends with 5, and has length 26. (Use `?seq` to look up the documentation for the `seq()` function.)  
+
+2. Load the `mtcars` dataset using `data(mtcars)`. How many rows and columns are there in this dataset? What are the column names?  
+
+3. What is the highest `mpg` value?  
+
+4. Which car has the highest `mpg` value?  
+
+5. How many of each value are there in the `cyl` column?  
+
+6. How many `NA`s are there in the `cyl` column?  
+
+7. Extract the rows of the dataset for which `hp > 110`.  
+
+8. Extract the rows of the dataset for which `am` has value 1 and `carb` has value 4.  
+
+9. Note that the car names are not actually a column in the data frame! Create a new column in the dataframe, "name", which holds the car name. (Hint: The `rownames()` function will be useful.)  
+
+10. Sort the dataframe in ascending order of car name. (Hint: The `order()` function may be useful.)  

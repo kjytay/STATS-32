@@ -1,0 +1,427 @@
+---
+title: "STATS 32 Session 4: Data Transformation"
+author: "Kenneth Tay"
+date: "Oct 11, 2018"
+output: 
+    slidy_presentation:
+        css: ../style.css
+---
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(dplyr)
+library(knitr)
+```
+
+# Recap of session 3: data visualization
+
+- Different types of plots for visualizing different types of variables
+- Grammar of graphics for `ggplot2`
+    - Essential elements: **data**, **geom**etries, **aes**thetics  
+    - **Layers** allow us to build more complex plots  
+
+# `ggplot2` syntax
+
+```{r fig.width=5, fig.height=4}
+library(ggplot2)
+ggplot()
+```
+
+# `ggplot2` syntax
+
+```{r fig.width=5, fig.height=4}
+ggplot() +
+    geom_violin(data = mtcars, 
+                mapping = aes(x = factor(cyl), y = hp))
+```
+
+# `ggplot2` syntax
+
+```{r fig.width=5, fig.height=4}
+ggplot() +
+    geom_violin(data = mtcars, 
+                mapping = aes(x = factor(cyl), y = hp)) +
+    geom_point(data = mtcars, 
+               mapping = aes(x = factor(cyl), y = hp),
+               position = "jitter")
+```
+
+# `ggplot2` syntax
+
+```{r fig.width=5, fig.height=4}
+ggplot(data = mtcars, 
+       mapping = aes(x = factor(cyl), y = hp)) +
+    geom_violin() +
+    geom_point(position = "jitter")
+```
+
+# `ggplot2` syntax
+
+```{r fig.width=5, fig.height=4}
+ggplot(data = mtcars, 
+       mapping = aes(x = factor(cyl), y = hp)) +
+    geom_violin() +
+    geom_point(position = "jitter") +
+    labs(title = "Horsepower vs. Cylinder", x = "Cylinder", 
+         y = "Horsepower")
+```
+
+# `ggplot2` syntax
+
+```{r fig.width=5, fig.height=4}
+ggplot(data = mtcars, 
+       mapping = aes(x = factor(cyl), y = hp)) +
+    geom_violin() +
+    geom_point(position = "jitter") +
+    labs(title = "Horsepower vs. Cylinder", x = "Cylinder", 
+         y = "Horsepower") +
+    theme_classic()
+```
+
+# Agenda for today
+- Transforming data with `dplyr` (and `%>%` syntax)  
+
+# Why do we need to transform data?  
+We rarely get data in exactly the form we need!  
+
+- Need to create new variables or summaries  
+- Need to rename or reorder variables  
+
+Transforming data in R is made easy by the `dplyr` package ("official" cheat sheet available [here](https://www.rstudio.com/resources/cheatsheets/)).
+
+# The 5 basic `dplyr` verbs
+
+- `select()`: pick variables by their names
+- `mutate()`: create new variables based on existing ones
+- `arrange()`: reorder rows
+- `filter()`: pick observations by their values
+- `summarize()`: collapse many values down to a single summary
+
+# Toy example: Student scores
+```{r echo=FALSE}
+library(dplyr)
+scores <- data.frame(Name = c("Andrew", "John", "Mary", "Jane", "Bob", "Dan"),
+                     English = c(60, 66, 92, 80, 80, 58),
+                     Math = c(96, 55, 63, 76, 80, 52),
+                     Science = c(80, 56, 70, 89, 82, 79),
+                     History = c(56, 64, 62, 55, 48, 90),
+                     Spanish = c(77, 77, 98, 40, 50, 61),
+                     stringsAsFactors = FALSE)
+```
+
+```{r}
+scores
+```
+
+# `select`: pick subset of variables/columns by name
+
+History teacher: "I just want their names and History scores"
+
+1. Take the `scores` dataset.  
+2. **Select** the Name and History columns.  
+
+# `mutate`: create new columns based on old ones
+
+Form teacher: "What are their total scores?"  
+
+1. Take the `scores` dataset.  
+2. Add a new column by **mutating** existing columns: for each row, Total = English + Math + Science + History + Spanish  
+
+# `arrange`: reorder rows
+
+Form teacher: "Can I have the students in order of overall performance?"  
+
+1. Take the `scores` dataset.  
+2. **Arrange** rows by the Total column.  
+
+# `arrange`: reorder rows
+
+Form teacher: "No no, better students on top please..."  
+
+1. Take the `scores` dataset.  
+2. **Arrange** rows by the Total column, but in descending order.  
+
+# `arrange`: reorder rows
+
+Form teacher: "Can I have them in descending order of total scores, but if students tie, then by alphabetical order?"  
+
+1. Take the `scores` dataset.  
+2. **Arrange** rows first by the Total column in descending order, then by the Name column (in ascending order).  
+
+# `filter`: pick observations by their values
+
+History teacher: "I want to see which students scored less than 60 for history"
+
+1. Take the `scores` dataset.  
+2. **Filter** for rows where the value in the History column is less than 60.  
+
+# `summarize`: get summaries of data
+
+Academic: "I want to know the correlation between math and science scores"  
+
+1. Take the `scores` dataset.  
+2. **Summarize** the dataset by taking the correlation of the Math and Science columns.  
+
+Science teacher: "I want to know the mean and standard deviation of the scores for science"  
+
+1. Take the `scores` dataset.  
+2. **Summarize** the dataset by taking the mean of the Science column and the standard deviation of the science column.  
+
+# `group_by`: use `dplyr` verbs on a group-by-group basis  
+
+Academic: "I want to know if the boys scored better than the girls in Spanish"  
+
+1. Take the `scores` dataset.  
+2. **Group** the dataset rows by gender (assuming there is a gender column).  
+3. **Summarize** each group of the dataset by taking the mean of the Spanish column.
+
+# Practice
+
+Language teacher: "I want to know which students scored < 70 for both English and Spanish, but I just want names"
+
+# Practice
+
+Language teacher: "I want to know which students scored < 70 for both English and Spanish, but I just want names"  
+
+1. Take the `scores` dataset.  
+2. **Filter** for the rows which have English < 70 and Spanish < 70.  
+3. **Select** the Name column.  
+
+# Practice
+
+Math teacher: "I want to know which students scored < 70 for math, and I just want their names and their mean score across subjects"  
+
+# Practice
+
+Math teacher: "I want to know which students scored < 70 for math, and I just want their names and their mean score across subjects"  
+
+1. Take the `scores` dataset.  
+2. **Filter** for the rows which have Math < 70.  
+3. **Mutate** existing columns to get a new one: Mean = (English + ... + Spanish)/5.  
+4. **Select** the Name and Mean columns.  
+
+# `select`: pick subset of variables/columns by name
+
+History teacher: "I just want their names and History scores"
+
+1. Take the `scores` dataset.  
+2. **Select** the Name and History columns.  
+
+```{r}
+scores %>%
+    select(Name, History)
+```
+
+# `mutate`: create new columns based on old ones
+
+Form teacher: "What are their total scores?"  
+
+1. Take the `scores` dataset.  
+2. Add a new column by **mutating** existing columns: for each row, Total = English + Math + Science + History + Spanish  
+
+```{r}
+scores <- scores %>%
+    mutate(Total = English + Math + Science + History + Spanish)
+scores
+```
+
+# `arrange`: reorder rows
+
+Form teacher: "Can I have the students in order of overall performance?"  
+
+1. Take the `scores` dataset.  
+2. **Arrange** rows by the Total column.  
+
+```{r}
+scores %>%
+    arrange(Total)
+```
+
+# `arrange`: reorder rows
+
+Form teacher: "No no, better students on top please..."  
+
+1. Take the `scores` dataset.  
+2. **Arrange** rows by the Total column, but in descending order.  
+
+```{r}
+scores %>%
+    arrange(desc(Total))
+```
+
+# `arrange`: reorder rows
+
+Form teacher: "Can I have them in descending order of total scores, but if students tie, then by alphabetical order?"  
+
+1. Take the `scores` dataset.  
+2. **Arrange** rows first by the Total column in descending order, then by the Name column (in ascending order).  
+
+```{r}
+scores %>%
+    arrange(desc(Total), Name)
+```
+
+# `filter`: pick observations by their values
+
+History teacher: "I want to see which students scored less than 60 for history"
+
+1. Take the `scores` dataset.  
+2. **Filter** for rows where the value in the History column is less than 60.  
+
+```{r}
+scores %>%
+    filter(History < 60)
+```
+
+# More on filters  
+
+Other ways to make comparisons:  
+
+- `>`: greater than  
+- `<`: less than  
+- `>=`: greater than or equal to  
+- `<=`: less than or equal to  
+- `!=`: not equal to  
+- `==`: equal to (**Do not use `=` to test for equality!!**)  
+
+Combining comparisons:  
+
+- `!`: not  
+- `&`: and  
+- `|`: or  
+
+# More `filter` examples  
+
+Dan's parents: "I just want Dan's scores"
+```{r}
+scores %>% 
+    filter(Name == "Dan")
+```
+
+Language teacher: "I want to know which students score < 50 for either English or Spanish"  
+```{r}
+scores %>% 
+    filter(English < 50 | Spanish < 50)
+```
+
+# `summarize`: get summaries of data
+
+Academic: "I want to know the correlation between math and science scores"  
+
+1. Take the `scores` dataset.  
+2. **Summarize** the dataset by taking the correlation of the Math and Science columns.  
+
+```{r}
+scores %>%
+    summarize(corr = cor(Math, Science))
+```
+
+# `summarize`: get summaries of data
+
+Science teacher: "I want to know the mean and standard deviation of the scores for science"  
+
+1. Take the `scores` dataset.  
+2. **Summarize** the dataset by taking the mean of the Science column and the standard deviation of the science column.  
+
+```{r}
+scores %>%
+    summarize(Science_mean = mean(Science), 
+              Science_sd = sd(Science))
+```
+
+# `group_by`: use `dplyr` verbs on a group-by-group basis  
+
+Academic: "I want to know if the boys scored better than the girls in Spanish"  
+
+1. Take the `scores` dataset.  
+2. **Group** the dataset rows by gender (assuming there is a gender column).  
+3. **Summarize** each group of the dataset by taking the mean of the Spanish column.
+
+```{r echo=FALSE}
+scores$Gender <- c("M", "M", "F", "F", "M", "M")
+```
+
+```{r}
+scores %>%
+    group_by(Gender) %>%
+    summarize(Spanish_mean = mean(Spanish))
+```
+
+# Chaining multiple `dplyr` commands
+
+Language teacher: "I want to know which students scored < 70 for both English and Spanish, but I just want names"  
+
+1. Take the `scores` dataset.  
+2. **Filter** for the rows which have English < 70 and Spanish < 70.  
+3. **Select** the Name column.  
+
+```{r}
+scores %>%
+    filter(English < 70 & Spanish < 70) %>%
+    select(Name)
+```
+
+# Chaining multiple `dplyr` commands
+
+Math teacher: "I want to know which students scored < 70 for math, and I just want their names and their mean score across subjects"  
+
+1. Take the `scores` dataset.  
+2. **Filter** for the rows which have Math < 70.  
+3. **Mutate** existing columns to get a new one: Mean = (English + ... + Spanish)/5.  
+4. **Select** the Name and Mean columns. 
+
+```{r}
+scores %>%
+    filter(Math < 70) %>%
+    mutate(Mean = (English + Math + Science + History + Spanish)/5) %>%
+    select(Name, Mean)
+```
+
+# Today's dataset: Flights from New York City   
+
+<center>**Exploring flights from NYC to the Bay Area**</center>
+
+<center>![](Images/plane.jpg){width=80%}
+<div class="caption">(Source: [Sunday Express](https://www.express.co.uk/news/science/621722/supersonic-private-plane-fly-Britons-New-York-three-hours-Concorde))</div>
+</center>
+
+
+----
+<br><br><br><br><br><br><br><br>
+<font size = 36><b>Optional material</b></font>
+
+# `transmute`: create new columns based on old ones, discard old ones
+
+Form teacher: "I just want the mean score for each student"
+```{r eval = FALSE}
+scores %>% 
+    transmute(mean = (English + Math + Science + History + Spanish) / 5)
+```
+
+# TRUE/FALSE statements
+
+How does R understand the code `filter(History < 60)`?
+
+- R checks each row of the dataset: is `History` less than 60 or not?
+    - `History < 60` is a statement that is either `TRUE` or `FALSE`
+    - If `TRUE`, keep the row
+    - If not, discard it
+- `filter(<condition>)` only returns the rows for which `<condition>` is `TRUE`
+- Technical term for a statement that is either `TRUE` or `FALSE`: **boolean expression**
+
+# TRUE/FALSE examples  
+
+```{r}
+3 > 2
+3 < 2
+3 == 2
+c(1, 2, 3, 1) == c(3, 2, 1, 2)
+c(1, 2, 3, 1) == 1
+```
+
+# Be careful with `NA`s!  
+
+```{r}
+1 == NA
+NA == NA
+is.na(NA)
+```
+

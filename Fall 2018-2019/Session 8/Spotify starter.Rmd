@@ -1,0 +1,97 @@
+---
+title: "Analysis of Top Tracks in Spotify"
+author: "put your name"
+date: "10/25/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Introduction
+
+This is a basic analysis of the top 100 songs on Spotify for the year 2017. The audio features for each song were extracted using the Spotify Web API and the spotipy Python library. Credit goes to Spotify for calculating the audio feature values. This dataset is publicly available on [Kaggle](https://www.kaggle.com/nadintamer/top-tracks-of-2017/home).
+
+We will only look at a few columns that are of interest to us.
+
+## Data import and processing
+
+Library imports:
+```{r}
+library(dplyr)
+library(forcats)
+library(ggplot2)
+library(knitr)
+library(readr)
+```
+
+Data import:
+```{r}
+df <- read_csv("spotify-2017.csv", 
+    col_types = cols(mode = col_character()))
+df <- df %>% mutate(mode = fct_recode(mode, 
+                                      "Major" = "1.0",
+                                      "Minor" = "0.0"))
+kable(head(df))
+```
+
+For this analysis, we will focus on mode, tempo, valence and loudness. Below are the details for these columns. For details on the remainder of the columns, see [here](https://www.kaggle.com/nadintamer/top-tracks-of-2017).
+
+- `name`: Name of the song  
+- `artists`:  Artist(s) of the song
+- `loudness`: The overall loudness of a track in decibels (dB). Loudness values are averaged across the entire track and are useful for comparing relative loudness of tracks. Loudness is the quality of a sound that is the primary psychological correlate of physical strength (amplitude). Values typical range between -60 and 0 db. 
+- `mode`: Mode indicates the modality (major or minor) of a track, the type of scale from which its melodic content is derived.
+- `valence`: A measure from 0.0 to 1.0 describing the musical positiveness conveyed by a track. Tracks with high valence sound more positive (e.g. happy, cheerful, euphoric), while tracks with low valence sound more negative (e.g. sad, depressed, angry).  
+- `tempo`: The overall estimated tempo of a track in beats per minute (BPM). In musical terminology, tempo is the speed or pace of a given piece and derives directly from the average beat duration.
+
+## Differences in tempo between songs in major and minor keys
+
+First, we want to test if there is a difference in the distribution of tempo between songs in a major key and songs in a minor key. Let's look at this in a histogram:
+```{r}
+ggplot(data = df, mapping = aes(x = tempo)) +
+    geom_histogram(aes(fill = mode)) +
+    facet_wrap(~ mode)
+```
+
+The distribution in both plots look quite similar, with a large peak around 100 and maybe a smaller peak around 130-150.
+
+We can plot both these distributions as a density plot:
+```{r}
+ggplot(data = df, mapping = aes(x = tempo)) +
+    geom_density(aes(col = mode))
+```
+
+The two distributions look very similar.
+
+<!---------------
+This is the place to insert code on testing difference between major and minor key
+---------------->
+
+## Relationship between loudness and valence
+
+Scatterplot of `valence` vs. `loudness`:
+```{r}
+ggplot(data = df, mapping = aes(x = loudness, y = valence)) +
+    geom_point()
+```
+
+Let's fit a linear model of `valence` vs. `loudness`. Expectation: The louder the song, the happier it is. Hence, we expect a positive relationship.
+
+<!---------------
+This is the place to insert code on modeling linear relationship between valence and loudness
+---------------->
+
+## Modeling valence as a function of loudness and mode
+
+Whether a song is in a major key or a minor key could affect the relationship between valence and loudness. Expectation: ???
+
+```{r}
+ggplot(data = df, mapping = aes(x = loudness, y = valence, col = mode)) +
+    geom_point() +
+    facet_grid(. ~ mode)
+```
+
+<!---------------
+This is the place to insert code on modeling valence vs. loudness and mode
+---------------->

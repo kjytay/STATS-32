@@ -1,0 +1,272 @@
+---
+title: "02-Data frames"
+author: "Kenneth Tay"
+date: "Oct 4, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Packages
+
+To install a package `pkgName`, simply type `install.packages("pkgName")` into the console.  
+
+To use functions in the package, we first have to load the package: `library(pkgName)`. If the package has not been installed yet, we will get an error. Otherwise, functions in the package are now available for use.
+
+## Data frames
+
+Packages not only give us access to user-created functions, but also user-created datasets. In R, datasets are called data frames.
+
+Let's load the `fueleconomy` package (if you haven't install this package yet, run this command first: `install.packages("fueleconomy")`):
+```{r}
+library(fueleconomy)
+```
+
+Load the vehicles dataset with the `data` function (to find out more about the vehicles dataset, key in `?vehicles`):
+```{r}
+data(vehicles)
+```
+
+An entry `vehicles` pops up in the Environment tab. We can see that the dataset has ~33,000 observations with 12 variables.
+
+Let's view the data with the `View()` function (note the capital V). (Alternatively, we can click on "the "vehicles" in the Environment tab.) A new tab pops up in the top-left pane displaying the data. Clicking on the column names allows us to sort the data.
+
+(**Note:** Some of you might not be able to click on "fueleconomy" in the Environment tab right away. Don't worry about it, typing `View(fueleconomy)` into the console will still work, and you should be able to click on "fueleconomy" after that.)
+
+### Seeing parts of the data
+
+33,000 observations is a lot of observations to look through. Instead of looking through all of it, we can use various functions to give us a feel for the data.
+
+Use the `head` and `tail` functions to display the first few or last few rows of the dataset. To control the number of lines shown (default is 6), use the optional `n` argument.
+```{r}
+head(vehicles)
+tail(vehicles, n = 2)
+```
+
+Under the hood, data frames are implemented as lists, with each column being one element in the list. Hence, whatever we can do with lists, we can do with data frames. For example, we can get the data frame's column names using `name()`:
+```{r}
+names(vehicles)
+```
+
+To access a particular column, we can use the `[[` or `$` notation:
+```{r}
+vehicles$class[1:10]
+```
+
+Since the number of columns in a data frame is just the number of elements in a list, we can get the number of columns using `length()`:
+```{r}
+length(vehicles)
+```
+
+We can also use the `ncol()` and `nrow()` functions to get the number of columns and rows of the data frame:
+```{r}
+ncol(vehicles)
+nrow(vehicles)
+```
+
+Interestingly, data frames can act a little like matrices too. For example, we can use `dim()` to figure out the number of rows and columns in the data frame:
+```{r}
+dim(vehicles)
+```
+
+To access the 30th row, we can type
+```{r}
+vehicles[30, ]
+```
+
+### Getting an overview of the data
+
+For an overview of the entire data set, the `str` function we introduced last session is very handy. For each column, `str` tells us what type of variable it is, as well as the first couple of values for the column.
+```{r}
+str(vehicles)
+```
+
+The `summary` function gives us some useful statistics for each variable:
+```{r}
+summary(vehicles)
+```
+
+We can also do summaries on just one column:
+```{r}
+summary(vehicles$hwy)
+```
+
+For just the mean or median, use the `mean` and `median` functions on the column of interest:
+```{r}
+mean(vehicles$hwy)
+median(vehicles$hwy)
+```
+
+The `sd()` and `var()` functions compute the standard deviation and variance of a vector for us:
+```{r}
+sd(vehicles$hwy)
+var(vehicles$hwy)
+```
+
+Note that the default types for the variables don't always make sense. For example, does it make sense to take the mean of id numbers? To change the type of a column, use the `as.x` function (where `x` is the type you want to change to):
+```{r}
+vehicles$id <- as.character(vehicles$id)
+str(vehicles)
+```
+
+## Factors  
+
+Look at the output of `summary(vehicles)` again. Note that for all the character variables, `summary()` doesn't give us any information on them. One way to get information on character variables is to use the `table()` function:  
+```{r}
+table(vehicles$drive)
+```
+
+Another way we can get information on character variables is by converting them to **factors**. Factors represent **categorical variables**: i.e. values fall into one of several categories (e.g. gender, age group). Categories can be unordered (e.g. gender, we call them **nominal variables**), or ordered (e.g. age group, we call them **ordinal variables**).
+
+We can make a character variable into a factor variable by using `factor()`. Notice now that `summary()` gives more useful information. (By default, factor variables are nominal variables.)
+```{r}
+vehicles$drive <- factor(vehicles$drive)
+summary(vehicles$drive)
+```
+
+Let's look at the internal structure of the factor variable:
+```{r}
+str(vehicles$drive)
+```
+
+Notice that the words ("2 Wheel Drive", etc.) have been changed into numbers! That's because R assigns each category a number. We can see this assignment somewhat by calling `levels()`, which shows us the "levels", or categories, for this variable:
+```{r}
+levels(vehicles$drive)
+```
+
+So 2-Wheel Drives are labeled 1, and so on. By default, R assigns this internal labeling by alphabetical order. This internal labeling is usually not a concern to us. See optional material section for more details. 
+
+## Working with NAs
+
+Let's compute the mean number of cylinders in our dataset:
+```{r}
+mean(vehicles$cyl)
+```
+
+Hmm, we get an `NA`? What's happening? If we look through the `cyl` column, you'll find that some of the entries are `NA`. Look at the documentation for the `mean` function and you'll see that there is an `na.rm` option, with default value `FALSE`. This means that by default, `mean` will not remove any `NA`s that it sees, and will return `NA` if any one of the elements is `NA`.
+
+We can get the mean as follows:
+```{r}
+mean(vehicles$cyl, na.rm = TRUE)
+```
+
+Working with `NA`s can be tricky sometimes because they don't always show up. For example, the output of `table` doesn't show you the `NA`s, which could mislead you into thinking that there are no `NA`s in the column:
+```{r}
+table(vehicles$cyl)
+```
+
+The summary function does tell us though if there are `NA`s in a column:
+```{r}
+summary(vehicles$cyl)
+```
+
+To test if something is an `NA` or not, use the `is.na` function.
+```{r}
+is.na(NA)
+```
+
+
+## Filtering (the old way)
+
+What if I just want to look at observations which have more than 8 cylinders? To do that, we first need to know another way of extracting elements from a vector. Consider the vector below:
+```{r}
+vec <- 1:3
+```
+
+To extract a group of elements from `vec`, we previously used square bracket notation, with a vector of indices that we wanted to extract:
+```{r}
+vec[c(1,2)]
+```
+
+Another way to extract elements is by putting a logical vector of the same length in the square brackets. R will then extract those elements which match to `TRUE`. For example, the code below extracts the first and third elements:
+```{r}
+vec[c(TRUE, FALSE, TRUE)]
+```
+
+To extract all the observations with more than 8 cylinders, we can do this:
+```{r}
+df <- vehicles[vehicles$cyl > 8, ]
+table(df$cyl)
+```
+
+To extract observations with exactly 8 cylinders (notice the **double equal sign**):
+```{r}
+df <- vehicles[vehicles$cyl == 8, ]
+table(df$cyl)
+```
+
+To extract observations such that the number of cylinders is not 8:
+```{r}
+df <- vehicles[vehicles$cyl != 8, ]
+table(df$cyl)
+```
+
+This is the "old" way of filtering datasets. (Next week, we'll talk about a newer way to do filtering and other data transformations.)
+
+## Optional material  
+
+### Viewing a random sample of the dataset  
+
+Instead of just the first or last few rows, we may want to view a random sample of rows from the data frame. We can do this by composing functions that we already know with `sample()`:
+```{r}
+vehicles[sample(nrow(vehicles), 5), ]
+```
+
+### Computing the mode of a column  
+
+R doesn't have a built-in function to compute the mode. We can either write our own function (a number of people have done that, do a google search), or we can use some other functions which allow us to figure out what the mode is.
+
+First, the `table` function tells us how many times each value appeared in the column:
+```{r}
+table(vehicles$hwy)
+```
+
+To find out which number appeared most often, we have to visually scan the whole table. We could sort the table to help us:
+```{r}
+sort(table(vehicles$hwy))
+```
+
+The mode is the last entry (24, appearing 2788 times). To have the mode appear in front, adding a `decreasing = TRUE` argument to the function call:
+```{r}
+sort(table(vehicles$hwy), decreasing = TRUE)
+```
+
+### More on factors  
+
+By default, when we make a variable a factor, R assigns an internal labeling by alphabetical order. This usually doesn't concern us. One instance where we might want to have more control over the ordering is when we plot the data: for a bar plot, the category labeled 1 goes on the left-most end, followed by 2, etc.  
+```{r}
+barplot(table(vehicles$drive))
+```
+
+If we want to, we can set the order ourselves by specifying a `levels` argument. Let's flip the labeling:
+```{r}
+vehicles$drive <- factor(vehicles$drive, 
+                         levels = sort(unique(vehicles$drive), decreasing = TRUE))
+levels(vehicles$drive)
+```
+
+Note how the barplot is now "flipped":
+```{r}
+barplot(table(vehicles$drive))
+```
+
+For ordinal variables, we need to add an `ordered = TRUE` argument to `factor()`:
+```{r}
+vehicles$drive <- as.character(vehicles$drive)
+vehicles$drive <- factor(vehicles$drive, ordered = TRUE)
+str(vehicles$drive)
+levels(vehicles$drive)
+head(vehicles$drive)
+```
+
+
+## Session info
+
+This section is for documentation purposes: By displaying my session info, others who read this document will know what the system set-up was when I ran the commands above.
+
+```{r}
+sessionInfo()
+```
+

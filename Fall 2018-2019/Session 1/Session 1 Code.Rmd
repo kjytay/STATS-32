@@ -1,0 +1,285 @@
+---
+title: "01-Vectors, matrices and lists"
+author: "Kenneth Tay"
+date: "Oct 2, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## RStudio
+
+When you open RStudio, you will see 3 different windows along with a number of tabs:
+
+### Left  
+
+This is the **R console**, where you key in commands to be run in an interactive fashion. Type in your command and hit the Enter key. Once you hit the Enter key, R executes your command and prints the result, if any.  
+
+### Top-right
+
+- **Environment:** List of objects that we have created or have access to. We can also see the list of objects using the command `ls()`.
+- **History:** List of commands that we have entered into the console.  
+
+### Bottom-right
+
+- **Files:** Allows you to navigate the directory structure on your computer.
+- **Plots:** Any graphical output you make will be displayed here.
+- **Packages:** List of packages that have been installed on your computer.
+- **Help:** Documentation for `functionName` appears here when you type `?functionName` in the console.
+- **Viewer:** For displaying local web content.
+
+### Top-left
+
+There isn't anything here at the moment, but this space will become useful later when we are working with scripts. Click the ![](Images/New document.png) icon in the top-left corner of the window, and click "R Script". A new window pane that looks like a text editor opens up.
+
+We'll explore scripts later in the course, but for now, this is a useful place for us to type out long commands (especially those which span over multiple lines). To execute code from this window, highlight the code and click the ![](Images/Run.png) button at the top of the window (or `Cmd-Enter` on a Mac, `Ctrl-Enter` on Windows).  
+
+## R as a calculator
+
+You can use R has a high-powered calculator. For example,
+```{r}
+1 + 2
+456 * 7
+5 / 2
+```
+
+Notice that the command `5/2` gave the result `2.5`, while several other programming languages would typically give `2` as a result.
+
+There are several math functions which come with R. For example, to evaluate $log (e^{25} - 2^{\sin(\pi)})$, we would type
+```{r}
+log(exp(25) - 2^(sin(pi)))
+```
+
+## Types of variables
+
+Apart from numbers, R supports a number of different "types" of variables. The most commonly used ones are numeric variables, character variables (i.e. strings), factor variables, and boolean (or logical) variables. (We'll talk about factors in Session 2.)
+
+We can check the type of a variable by using the `typeof` function:
+```{r}
+typeof("1")
+typeof(TRUE)
+```
+
+We can change the type of a variable to type `x` using the function `as.x`. This process is called "coercion". For example, the following code changes the number `6507232300` to the string `"6507232300"`:
+```{r}
+as.character(6507232300)
+typeof(6507232300)
+typeof(as.character(6507232300))
+```
+
+We can also change variables to numbers or boolean variables.
+```{r}
+as.numeric("123")
+as.logical(123)
+as.logical(0)
+```
+
+Sometimes type conversion might not work:
+```{r}
+as.numeric("def")
+```
+
+Sometimes type conversion does not work as you might expect. Always check that the result is what you want!
+```{r}
+as.logical("123")
+```
+
+## Variable assignment
+
+Often, we want to store the result of a computation so that we can use it later. R allows us to do this by variable assignment. Variable names must start with a letter and can only contain letters, numbers, `_` and `.`.
+
+The following code assigns the value `2` to the variable `x`:
+
+```{r}
+x <- 2
+```
+
+**Do not use the `=` sign to assign values to variables!** Although it works in R, it can cause a lot of confusion.
+
+Notice that no output was printed. This is because the act of variable assignment doesn't produce any output. If we want to see what `x` contains, simply key its name into the console:
+```{r}
+x
+```
+
+For more complex objects that will encounter soon, we can use the `str` function to get information on the internal **str**ucture of the object:
+```{r}
+str(x)
+```
+
+We can use `x` in computations:
+```{r}
+x^2 + 3*x
+```
+
+We can also reassign `x` to a different value:
+```{r}
+x <- x^2
+x
+```
+
+What is the value of `x` and `y` after I execute the following code?
+```{r}
+y <- x
+x <- x^2
+```
+
+Let's add a third variable:
+```{r}
+z <- 3
+```
+
+Note that we now have 3 entries in our Environment tab. To remove an object/variable, use the `rm()` function:
+```{r}
+rm(x)
+```
+
+To remove more than one object, separate them by commas:
+```{r}
+rm(y, z)
+```
+
+Let's add the 3 variables back again:
+```{r}
+x <- 1; y <- 2; z <- 3
+```
+
+To remove all objects at once, use the following code:
+```{r}
+rm(list = ls())
+```
+
+## Vectors
+
+For data analysis, we often have to work with multiple values at the same time. There are a number of different R objects which allow us to do this. 
+
+The **vector** is a 1-dimensional array whose entries are the same type. For example, the following code produces a vector containing the numbers 1,2 and 3:
+```{r}
+vec <- c(1, 2, 3)
+vec
+```
+
+Just as we had the `as.x` functions to coerce variables to type `x`, R has `is.x` functions to check if a variable is of type `x`.
+```{r}
+is.vector(vec)
+```
+
+
+Typing out all the elements can be tedious. Sometimes there are shortcuts we can use. The following code assigns a vector of the numbers 1 to 100 to `vec`:
+```{r}
+vec <- 1:100
+vec
+```
+
+What if I only want even numbers from 1 to 100 (inclusive)? We can manipulate vectors using arithmetic operations (just like numbers). Note that arithmetic operations happen element-wise.
+```{r}
+even <- 1:50 * 2
+even
+```
+
+We can also get the odd numbers:
+```{r}
+odd <- even - 1
+```
+
+We can use the `c()` function to combine ("concatenate") several small vectors into one large vector. How many elements does the vector `z` have?
+```{r}
+z <- 1:5
+z <- c(z, 3, z)
+```
+
+R allows us to access individual elements in a vector. Unlike many other programming languages, indexing begins at 1, not 0. For example, to return the first even number, I would use the following code:
+```{r}
+even[1]
+```
+
+We can get multiple elements of a vector as well. The following code extracts the 5th to 9th even number (inclusive), and assigns it to the variable `y`:
+```{r}
+y <- even[5:9]
+y
+```
+
+This extracts just the 3rd and 5th even numbers:
+```{r}
+even[c(3,5)]
+```
+
+What if I want all even numbers except the first two? I can use negative indexing to achieve my goal:
+```{r}
+even[-c(1,2)]
+```
+
+
+Use the `length` function to figure out how many elements there are in a vector. What happens if I try to extract an element from an index greater than its length?
+```{r}
+length(odd)
+odd[51]
+```
+
+One last note about vectors: the elements in a vector have to be of the same type. How do you think R gets the result for the code below?
+```{r}
+c(1, 2, "a")
+```
+
+## Matrices and arrays
+Matrices are just the 2-dimensional analogs of vectors while arrays are the $n$-dimensional analogs of vectors. We won't be talking about them a whole lot in this class. As with vectors, elements of matrices and arrays have to be of the same type.
+
+Use the `matrix()` command to change a vector into a matrix:
+```{r}
+A <- matrix(LETTERS, nrow = 2)
+A
+```
+
+Notice that R takes the elements in the vector you give it and fills in the matrix column by column. If we want the elements to be filled in by row instead, we have to put in a `byrow = TRUE` argument:
+```{r}
+B <- matrix(letters, nrow = 2, byrow = TRUE)
+```
+
+To get the dimensions of the matrix, we can use the `dim`, `nrow` and `ncol` functions.
+
+To access the element in the `i`th row and `j` column for the matrix `B`, use the index `i,j`:
+```{r}
+B[1, 2]  # for the element in the 1st row and 2nd column
+```
+
+What do you think `A[2,]` returns? how about `A[,2]`?
+
+## Lists
+In all the data structures so far, the elements have to be of the same type. To have elements on different types in one data structure, we can use a list, which we create with `list()`. We can think of a list as a collection of key-value pairs. Keys should be strings.
+
+```{r}
+person <- list(name = "John Doe", age = 26)
+person
+```
+
+The `str` function can be used to inspect what is inside `person`:
+```{r}
+str(person)
+```
+
+To access the `name` element `person`, we have 2 options:
+```{r}
+person[["name"]]
+person$name
+```
+
+The elements of a list can be anything, even another data structure! Let's add the names of John's children to the `person` object:
+```{r}
+person$children = c("Ross", "Robert")
+str(person)
+```
+
+To see the keys associated with a list, use the `names()` function:
+```{r}
+names(person)
+```
+
+## Session info
+
+This section is for documentation purposes: By displaying my session info, others who read this document will know what the system set-up was when I ran the commands above.
+
+```{r}
+sessionInfo()
+```
+

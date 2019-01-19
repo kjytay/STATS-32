@@ -1,0 +1,241 @@
+---
+title: "03-Data Visualization"
+author: "Kenneth Tay"
+date: "Oct 9, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Today we'll be working with the diamonds dataset from the ggplot2 package. We want to understand how various features of the diamond influence its price. We will be looking specifically at carat and color.
+
+Let's load the `ggplot2` package and the diamonds dataset. (Install the package with `install.packages("ggplot2")` if you have not done so yet.) Look at the documentation to understand what the dataset is about.
+```{r}
+library(ggplot2)
+data(diamonds)
+?diamonds
+```
+
+As usual, we can use `str()`, `head()` or `View()` to see the dataset:
+```{r}
+str(diamonds)
+head(diamonds)
+```
+
+## Histograms
+
+Histograms are a good way of understanding the distribution of a single variable. In this dataset, the variable that is probably of greatest interest is price. Let's plot a histogram of price to understand its distribution:
+```{r}
+ggplot(data = diamonds) +
+    geom_histogram(mapping = aes(x = price))
+```
+
+R defaults to 30 bins for the histogram. We can change this by adding a `bins` argument to `geom_histogram()`. As you can see from the histograms below, different bin widths can give very different interpretations of the data!
+```{r}
+ggplot(data = diamonds) +
+    geom_histogram(mapping = aes(x = price), bins = 2)
+ggplot(data = diamonds) +
+    geom_histogram(mapping = aes(x = price), bins = 100)
+ggplot(data = diamonds) +
+    geom_histogram(mapping = aes(x = price), bins = 1000)
+```
+
+## Relationships between 2 variables
+
+Since price is an important variable, we want to understand which characteristics of a diamond affect it and how.
+
+A first guess would be that the weight of a diamond, indicated by carat, would heavily influence price. Let's make a scatterplot of price vs. carat:
+```{r}
+ggplot(data = diamonds) +
+    geom_point(mapping = aes(x = carat, y = price))
+```
+
+Wow, what a mess! That's because we have so many data points being plotted over each other (this is called **overplotting**). Are there more diamonds in the 0-1 carat range or the 2-3 carat range? It's hard to tell. One way to address this is to modify the transparency of each point by adjusting "alpha". By default, `alpha = 1`, which represents being fully opaque. We can reduce alpha (`alpha = 0.05` means that 20 points are needed to get full opacity):
+```{r}
+ggplot(data = diamonds) +
+    geom_point(mapping = aes(x = carat, y = price), alpha = 0.05)
+```
+
+There's still a fair bit of overplotting going on, but some characteristics of the data become more obvious. For example, the carat size of diamonds seem to bunch up around certain values (e.g. just above 1, 1.5, 2). This may be worth investigating.
+
+Instead of filled circles, we could change the shape of the points manually through the `shape` argument (see [this reference](http://r4ds.had.co.nz/data-visualisation.html#fig:shapes) for which symbols correspond to each `shape` value):
+```{r}
+ggplot(data = diamonds) +
+    geom_point(mapping = aes(x = carat, y = price), alpha = 0.05, shape = 4)
+```
+
+It's debatable that changing the shape helped make the plot clearer.
+
+Is there a relationship between price and carat? It does seem so. We can add a `geom_smooth()` layer that tries to determine the relationship between the two:
+```{r}
+ggplot(data = diamonds, mapping = aes(x = carat, y = price)) +
+    geom_point(alpha = 0.05) +
+    geom_smooth()
+```
+
+The heavier the diamond, the more expensive it is. At the same time, we see quite a wide spread of prices for diamonds of the same weight, indicating that there are probably other factors at play.
+
+Looking at the dataset, we might guess that cut might be an important factor determining the price of a diamond as well. Let's try a scatterplot:
+```{r}
+ggplot(data = diamonds, mapping = aes(x = cut, y = price)) +
+    geom_point()
+```
+
+That's not informative at all! We see a lot of overplotting going on. Let's use the alpha trick that we used previously:
+```{r}
+ggplot(data = diamonds, mapping = aes(x = cut, y = price)) +
+    geom_point(alpha = 0.05)
+```
+
+In this case, changing alpha on its own is not going to help much, since all the points are still going to lie on one vertical line. Let's add **jitter** (i.e. move the points by a small random amount) to get a better view.
+```{r}
+ggplot(data = diamonds, mapping = aes(x = cut, y = price)) +
+    geom_point(alpha = 0.05, position = "jitter")
+```
+
+Because jittering is such a common operation, instead of adding `position = "jitter"` as an argument to `geom_point()`, we can use `geom_jitter()` directly to get the same plot:
+```{r}
+ggplot(data = diamonds, mapping = aes(x = cut, y = price)) +
+    geom_jitter(alpha = 0.05)
+```
+
+This is slightly better in that we start to see some trends, but there is still a lot of overplotting: look at the concentration of black dots near the bottom of the plot.
+
+Instead of plotting all the data points, we can use boxplots or violin plots to look at summary statistics instead:
+```{r}
+ggplot(data = diamonds, mapping = aes(x = cut, y = price)) +
+    geom_boxplot()
+ggplot(data = diamonds, mapping = aes(x = cut, y = price)) +
+    geom_violin()
+```
+
+Interesting! The bulk of the distribution of prices is roughly the same, no matter what the cut is. In fact, from the violin plot, there seem to be a lot of diamonds of ideal cut which have very low prices!
+
+## Relationships between 3 or more variables
+
+It seems unintuitive that the cut of a diamond does not affect its price, and that diamonds of ideal cut have lower prices. Could there be other factors at work? One possibility is that there just aren't many large diamonds of ideal cut: thus, a diamond of ideal cut tends to weigh less (smaller in carat size), and hence fetches a lower price.
+
+We can explore this theory by modifying other aesthetics of our original scatterplot. For example, we can let the color of each dot signify its cut:
+```{r}
+ggplot(data = diamonds, mapping = aes(x = carat, y = price, col = cut)) +
+    geom_point(alpha = 0.2)
+```
+
+There seem to be more yellow dots on top and more purple dots below, lending credence to the intuitive assumption that better cut results in better quality.
+
+In this case, changing the color of the dots helped us to understand the data better. Choosing which aesthetics to modify is an important skill to learn. For example, it would have been a bad idea to relate the cut of a diamond to its size or shape:
+```{r}
+ggplot(data = diamonds, mapping = aes(x = carat, y = price, size = cut)) +
+    geom_point(alpha = 0.2)
+ggplot(data = diamonds, mapping = aes(x = carat, y = price, shape = cut)) +
+    geom_point(alpha = 0.2)
+```
+
+Let's go back to our colored plot. The colors here are the R defaults. We can introduce our own color scale with `scale_color_brewer()` to make the plot more informative (the full list of color palettes can be found through [google image search](https://www.google.com/search?q=RColorbrewer+palette+chart&sa=X&tbm=isch&tbo=u&source=univ&ved=0ahUKEwjU3-6e3KDWAhUmi1QKHSsOCmkQsAQINQ&biw=1166&bih=655)):
+```{r}
+ggplot(data = diamonds, mapping = aes(x = carat, y = price, col = cut)) +
+    geom_point(alpha = 0.2) +
+    scale_color_brewer(palette = "YlOrRd")
+```
+
+There's still a fair amount of overplotting going on. Can we have separate graphs of price vs. carat for each cut?
+
+This is called splitting the plot into **facets**. R allows us to do this by using the function `facet_wrap()`. Use the following code to facet the plot by a single variable:
+```{r fig.width=8}
+ggplot(data = diamonds, mapping = aes(x = carat, y = price, col = cut)) +
+    geom_point(alpha = 0.2) +
+    scale_colour_brewer(palette = "YlOrRd") +
+    facet_wrap(~ cut)
+```
+
+By default, R put just 3 subplots in each row. We can change this by adding a `nrow` argument to `facet_wrap()`:
+```{r fig.width=10, fig.height=4}
+ggplot(data = diamonds, mapping = aes(x = carat, y = price, col = cut)) +
+    geom_point(alpha = 0.2) +
+    scale_colour_brewer(palette = "YlOrRd") +
+    facet_wrap(~ cut, nrow = 1)
+```
+
+Facetting didn't help too much in this case, since the plots for the better cuts look very similar to one another. Perhaps we could add a smoothing layer to the original plot:
+```{r}
+ggplot(data = diamonds, mapping = aes(x = carat, y = price, col = cut)) +
+    geom_point(alpha = 0.2) +
+    scale_colour_brewer(palette = "YlOrRd") +
+    geom_smooth()
+```
+
+As you can probably see, the possibilities are endless! You can try plotting different variables against each other and see if you get anything interesting.
+
+If we want to facet by more than 1 variable, we can do so with `facet_grid()`. The variable before the `~` sign will be split on the rows, while the variable after the `~` sign will be split on the columns:
+```{r}
+ggplot(data = diamonds, mapping = aes(x = carat, y = price)) +
+    geom_point(alpha = 0.2) +
+    facet_grid(cut ~ color)
+```
+
+## Making your plot more readable
+
+Let's say you're satisfied with the scatterplot of price vs. carat with color denoting cut, and that you want to share it with others. The first thing you should do is label your axes and give your plot a title:
+```{r}
+ggplot(data = diamonds, mapping = aes(x = carat, y = price, col = cut)) +
+    geom_point(alpha = 0.2) +
+    scale_colour_brewer(palette = "YlOrRd") +
+    labs(x = "Carat", y = "Price", title = "Plot of carat vs. price")
+```
+
+The size of the labels seems a bit small. We can adjust them using the `theme()` function. Let's centralize the plot title at the same time:
+```{r}
+ggplot(data = diamonds, mapping = aes(x = carat, y = price, col = cut)) +
+    geom_point(alpha = 0.2) +
+    scale_colour_brewer(palette = "YlOrRd") +
+    labs(x = "Carat", y = "Price", title = "Plot of carat vs. price") + 
+    theme(plot.title = element_text(size = rel(1.5), face = "bold", hjust = 0.5),
+          axis.title = element_text(size = rel(1.2)))
+```
+
+We can move the legend around by setting a `legend.position` argument in `theme()` (possible options are "none", "left", "right", "bottom", "top"):
+```{r}
+ggplot(data = diamonds, mapping = aes(x = carat, y = price, col = cut)) +
+    geom_point(alpha = 0.2) +
+    scale_colour_brewer(palette = "YlOrRd") +
+    labs(x = "Carat", y = "Price", title = "Plot of carat vs. price") + 
+    theme(plot.title = element_text(size = rel(2), face = "bold", hjust = 0.5),
+          axis.title = element_text(size = rel(1.5)),
+          legend.position = "bottom")
+```
+
+For a full (long!) list of attributes which can be modified, see [this reference](http://ggplot2.tidyverse.org/reference/theme.html).
+
+
+To save a plot, click on the ![](Images/Export.png) button, and click "Save as Image..." You can adjust the size of your image in the pop-up before saving it.
+
+## Optional material  
+
+It seems tedious to be changing these attributes for each graph we make. The nice thing about ggplot is that it lets us assign each part of the plot as a variable! For example, we could have reproduced the plot above using this code:
+```{r}
+p <- ggplot(data = diamonds, mapping = aes(x = carat, y = price, col = cut)) +
+    geom_point(alpha = 0.2) +
+    scale_colour_brewer(palette = "YlOrRd") +
+    labs(x = "Carat", y = "Price", title = "Plot of carat vs. price")
+th <- theme(plot.title = element_text(size = rel(1.5), face = "bold", hjust = 0.5),
+            axis.title = element_text(size = rel(1.2)),
+            legend.position = "bottom")
+p  # plot without the theme changes
+p + th
+```
+
+I can now apply these adjustments to any plot I want by adding `+ th` at the end of the code:
+```{r}
+ggplot(data = diamonds) +
+    geom_histogram(mapping = aes(x = price)) + 
+    labs(title = "Histogram of price", x = "Price", y = "Count") +
+    th
+```
+
+## Session info
+
+```{r}
+sessionInfo()
+```

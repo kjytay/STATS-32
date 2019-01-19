@@ -1,0 +1,272 @@
+---
+title: "04-Data Transformation"
+author: "Kenneth Tay"
+date: "Oct 11, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+```
+
+Let's start by loading the `dplyr` package:
+```{r}
+library(dplyr)
+```
+
+Did you notice the warning messages? What's going on there?  
+
+It turns out that the `dplyr` package has a function named `filter()`, but the `stats` package, which is automatically loaded when you start an R session, also has a function named `filter()`! So, if I type the command `filter(dataset, ...)`, how does R know which `filter()` function to use?  
+
+R looks for the function `filter()` starting with the package that was loaded most recently, and going backwards in time. Since `dplyr` was the last package loaded, R will assume that we meant `dplyr`'s version of `filter()` and use that.
+
+What if I meant the `stats` version of `filter()` instead? Is there a way that I can reference it? Yes! We can use "double colon" notation: `stats::filter()`. (The general syntax for this is `packageName::functionName()`.)
+
+## nycflights13
+
+Today we'll be working with the flights dataset from the nycflights13 package. Let's load the `nycflights13` package and the flights dataset (use `install.packages("nycflights13")` if you don't have the packge yet:
+```{r}
+library(nycflights13)
+data(flights)
+```
+
+Next, use the `?`, `str()` and `View()` functions to examine the dataset:
+```{r eval=FALSE}
+?flights
+str(flights)
+View(flights)
+```
+
+This dataset contains ~336,000 flights that departed from New York City (all 3 airports) in 2013. 
+
+Next, just key in the dataset name (i.e. `flights`):
+```{r}
+flights
+```
+
+Did you notice that the output format is different from what we've seen before? That's because previous datasets were in a data structure that we called data frames, while this is in a data structure called a **tibble**. Don't worry about the difference: for all intents and purposes, data frames are the same as tibbles.
+
+## `filter()` and logical operations  
+
+Since we are here in Stanford, we may only be interested in flights from NYC to SFO. We can use the `filter()` verb to achieve this:
+```{r}
+flights %>% filter(dest == "SFO")
+```
+
+Note that we used `==` to test whether `dest` was equal to `"SFO"`. **DO NOT USE `=`**. In programming, `=` usually means variable assignment.
+
+There are two other international airports near Stanford, San Jose International Airport ("SJC") and Oakland International Airport ("OAK"). So if we want to analyze flights that people take to get from NYC to Stanford, we should probably include these flights.
+```{r}
+flights %>% filter(dest == "SFO" | dest == "SJC" | dest == "OAK")
+```
+
+The command above filters the dataset and prints it out, but does not retain the output. To keep the extracted dataset for further analysis, we have to assign it to a variable:
+```{r}
+Stanford <- flights %>% filter(dest == "SFO" | dest == "SJC" | dest == "OAK")
+```
+
+We now have flights from NYC to SFO/SJC/OAK for the entire year. Let's say that I'm only interested in flights when school is in session (Sep - Jun). Since `month` is a numeric variable, we could do this:
+```{r}
+Stanford %>% filter(month <= 6 | month >= 9)
+```
+
+or this:
+```{r}
+Stanford %>% filter(month != 7 & month != 8)
+```
+
+## select() & rename()  
+
+Let's return to the `Stanford` dataset (i.e. all flights from NYC to SFO/SJC/OAK). Notice that we have a total of 19 variables. Sometimes our datasets will have hundreds or thousands of variables! Not all of them may be of interest to us. `select()` allows us to choose a subset of these variables to form a smaller dataset that may be easier to work with.
+
+19 is a pretty small number so we could do our data analysis without dropping any columns, but let's just try out some commands to get a feel for how `select()` works.
+
+We can select columns by name: if we just want the year, month and day columns, we can use the following code:
+```{r}
+Stanford %>% select(year, month, day)
+```
+
+If the columns we want form a contiguous block, then we can use simpler syntax. To select rows from `year` to `arr_delay` (inclusive):
+```{r}
+Stanford %>% select(year:arr_delay) 
+```
+
+In this example, the `year` column is superfluous, since all the values are all 2013. The code below drops the year column, keeping the rest:
+```{r}
+Stanford %>% select(-year)
+```
+
+`select()` can also be used to rearrange the columns. If, for example, I wanted to have the first 3 columns be day, month, year instead of year, month, day:
+```{r}
+Stanford %>% select(day, month, year, everything())
+```
+
+To rename column names, use the `rename()` function:
+```{r}
+Stanford %>% rename(tail_num = tailnum)
+```
+
+## arrange()
+
+Often we get datasets which are not in order, or in an order which we are not interested in. The `arrange()` function allows us to reorder the rows according to an order we want.
+
+The `Stanford` dataset looks like it is already ordered by actual departure time. Perhaps I'm most interested in the flights which had the longest departure delay. I could sort the dataset as follows:
+```{r}
+Stanford %>% arrange(dep_delay)
+```
+
+Looks like the flights with the shortest delay are at the top instead! To re-order by descending order, use `desc()`:
+```{r}
+Stanford %>% arrange(desc(dep_delay))
+```
+
+(Wow, that's a really long delay! Almost 17 hours.) To extract just the flights with the top 10 departure delays, we can use the `head()` function:
+```{r}
+Stanford %>% 
+    arrange(desc(dep_delay)) %>%
+    head(n = 10)
+```
+
+`arrange()` also allows us to filter by more than one column, in that each additional column will be used to break ties in the values of the preceding ones. For example, `flights` seems to be sorted by year, month, day, and actual departure time. If I wanted to sort by year, month, day and scheduled departure time instead:
+```{r}
+Stanford %>% arrange(year, month, day, sched_dep_time)
+```
+
+## mutate()  
+
+In this dataset we have both the time the plane spent in the air (`air_time`) and distance traveled (`distance`). From these two pieces of information, we can figure out the average speed of the plane for the flight using `mutate()`.
+
+`mutate()` adds new columns to the end of the dataset, so let's work with a smaller dataset for now so that we can see the values of our new column.
+```{r}
+Stanford_small <- Stanford %>% 
+    select(month, carrier, origin, dest, air_time, distance) %>%
+    mutate(speed = distance / air_time * 60)
+Stanford_small
+```
+
+`mutate()` can be used to create several new variables at once. For example, the following code is valid syntax:
+```{r}
+Stanford_small %>% mutate(speed_miles_per_min = air_time / distance,
+                   speed_miles_per_hour = speed_miles_per_min * 60)
+```
+
+If we only want to keep the newly created variables, use `transmute()` instead of `mutate()`.
+
+## A digression: plotting our data
+
+Let's make use of our plotting skills from last session to see if there are any trends in air time. First, let's make a histogram of `air_time`:
+```{r}
+library(ggplot2)
+ggplot(data = Stanford_small) + 
+    geom_histogram(aes(x = air_time))
+```
+
+Did you notice the warning message about rows being removed for "containing non-finite values"? If you view the `Stanford_small` dataset and scroll all the way down, you'll notice that there are some rows which have `NA` for `air_time`. Since we don't know what the air time is, we can't compute the speed and we can't plot it.
+
+As a data analyst, `NA`s are something to watch out for as they could invalidate your analysis. Why are these data missing? Is it completely at random, or is there something going on? For this session, we will just leave them in the dataset.  
+
+It seems like the air time of planes might vary depending on the origin and destination, so let's facet on these 2 variables:
+```{r}
+ggplot(data = Stanford_small) + 
+    geom_histogram(aes(x = air_time)) + 
+    facet_grid(origin ~ dest)
+```
+
+We learn 3 things from this plot: (i) there are no flights from La Guardia (LGA) to any of the 3 airports; (ii) there are no flights from Newark (EWR) to SJC/OAK; and (iii) there are very few flights from NYC to SJC/OAK compared to SFO. It's hard to tell if there are differences in the distributions; the optional material section explores this question further.  
+
+## summarize()
+
+Instead of looking at plots, we can try to look at summary statistics instead. What was the mean/median air time for flights in our `Stanford_small` dataset? We can use the `summarize()` function to help us:
+```{r}
+Stanford_small %>% summarize(mean_airtime = mean(air_time))
+Stanford_small %>% summarize(median_airtime = median(air_time))
+```
+
+The `NA`s are causing us trouble! We need to specify the `na.rm = TRUE` option to remove `NA`s from consideration:
+```{r}
+Stanford_small %>% summarize(mean_airtime = mean(air_time, na.rm = TRUE))
+Stanford_small %>% summarize(median_airtime = median(air_time, na.rm = TRUE))
+```
+
+`summarize()` gives me a summary of the entire dataset. If I want summaries by group, then I have to use `summarize()` in conjunction with `group_by()`. `group_by()` changes the unit of analysis from the whole dataset to individual groups. The following code groups the dataset by carrier, then computes the summary statistic for each group:
+```{r}
+Stanford_small %>%
+    group_by(carrier) %>%
+    summarize(mean_airtime = mean(air_time, na.rm = TRUE)) %>%
+    arrange(desc(mean_airtime))
+```
+
+I can also group by more than one variable. For example, if I wanted to count the number of flights for each carrier in each month, I could use the following code:
+```{r}
+Stanford_small %>%
+    group_by(month, carrier) %>%
+    summarize(count = n())
+```
+
+We can even "pipe" the dataset to `ggplot()` to plot the data!
+```{r}
+Stanford_small %>%
+    group_by(month, carrier) %>%
+    summarize(count = n()) %>%
+    ggplot(mapping = aes(x = month, y = count, col = carrier)) +
+        geom_line() +
+        geom_point() +
+        scale_x_continuous(breaks = 1:12)
+```
+
+## Optional material  
+
+### The `%in%` operator  
+
+Recall that we used the following line of code to extract flights that landed in SFO, SJC or OAK:
+```{r eval=FALSE}
+Stanford <- flights %>% filter(dest == "SFO" | dest == "SJC" | dest == "OAK")
+```
+
+We can use the `%in%` operator to make the code more succinct:
+```{r}
+flights %>% filter(dest %in% c("SFO", "SJC", "OAK"))
+```
+
+The `%in%` operator is very useful, especially we are checking if `dest` belongs to a long list of airports.  
+
+## Joy plots  
+
+Let's remove the rows with `air_time` being `NA`:
+```{r}
+Stanford_small <- Stanford_small %>%
+    filter(!is.na(air_time))
+```
+
+One theory we might have is that different carriers have different air times. Let's do a facet on `carrier`:
+```{r}
+ggplot(data = Stanford_small) + 
+    geom_histogram(aes(x = air_time)) + 
+    facet_grid(carrier ~ .)
+```
+
+The first thing we notice is that UA has many more flights than the other carriers. Because all 5 histograms have the same y-axis, this causes the other histograms to be obscured. To allow each histogram to have its own y-axis, we can add a `scales` argument to `facet_grid()`:
+```{r}
+ggplot(data = Stanford_small) + 
+    geom_histogram(mapping = aes(x = air_time)) + 
+    facet_grid(carrier ~ ., scales = "free_y")
+```
+
+As you can see, the histograms have very similar shapes, suggesting that the air times of various carriers is roughly the same. The one thing that we might notice is are the tails on the right.
+
+A plot that is increasing in popularity for plotting multiple histograms or density plots is the **joy plot**. The plot looks like a series of overlapping mountain ranges which can be compared against each other more easily than the histograms. The code below produces a joy plot:
+```{r}
+library(ggridges)
+ggplot(data = Stanford_small, aes(x = air_time, y = carrier)) +
+    geom_density_ridges(scale = 5)
+```
+
+(Play around with the scale parameter and see what happens.)
+
+## Session info
+
+```{r}
+sessionInfo()
+```
+
